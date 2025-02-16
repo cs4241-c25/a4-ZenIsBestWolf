@@ -1,0 +1,21 @@
+{
+  "include": ["./", "../shared"],
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "experimentalDecorators": false,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "jsx": "react",
+    "outDir": "../../dist",
+    "module": "ESNext",
+    "target": "ES2020",
+    "lib": ["ES2021", "DOM", "DOM.Iterable", "ES2022"],
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "sourceMap": true,
+  }
+}
