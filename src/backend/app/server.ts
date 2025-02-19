@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import express, { RequestHandler, User as ExpressUser } from 'express';
+import express, { RequestHandler } from 'express';
 import path from 'path';
 import https from 'https';
 import fs from 'fs';
@@ -13,10 +13,8 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { hostname } from 'os';
 import { HydratedDocument } from 'mongoose';
 
-declare module 'Express' {
-  interface User {
-    username: string;
-  }
+interface ExpressUser {
+  username: string;
 }
 
 const app = express();
