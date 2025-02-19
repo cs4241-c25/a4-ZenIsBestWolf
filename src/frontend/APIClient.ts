@@ -48,6 +48,10 @@ export class APIClient {
     });
   }
 
+  public async logout() {
+    await this.request(`/api/logout`);
+  }
+
   public async acquireUser() {
     const user = await this.request<User>(`/api/user`);
     if (user.username === '') {

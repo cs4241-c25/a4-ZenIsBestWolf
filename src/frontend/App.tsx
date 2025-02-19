@@ -16,14 +16,10 @@ export const App: FC = () => {
   }, [setUser]);
 
   useEffect(() => {
-    const username = localStorage.getItem('username');
-
-    if (username) {
-      setUser({ username });
-    } else {
+    if (!user) {
       void pollUser();
     }
-  }, [pollUser]);
+  }, [pollUser, user]);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

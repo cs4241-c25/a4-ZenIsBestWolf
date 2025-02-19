@@ -25,7 +25,6 @@ export const LoginPage: FC = () => {
     const authUser = await api.authenticate(username, password);
 
     setUser(authUser);
-    localStorage.setItem('username', authUser.username);
     history.push(`/`);
   }, [username, password, setUser, history]);
 

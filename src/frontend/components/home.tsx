@@ -49,8 +49,9 @@ export const HomePage: FC = () => {
       {user && (
         <Button
           onClick={() => {
-            localStorage.removeItem('username');
+            void api.logout();
             setUser(undefined);
+            history.go(0);
           }}
         >
           Log Out

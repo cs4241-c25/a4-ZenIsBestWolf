@@ -83,6 +83,13 @@ interface Signup {
   password: string;
 }
 
+app.get('/api/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) console.error(err);
+  });
+  res.redirect('/');
+});
+
 app.post('/api/signup', async (req, res) => {
   if (req.user) {
     res.status(403).send('You are already authenticated. Logout first.');
@@ -114,8 +121,17 @@ app.get('/api/user', (req, res) => {
   res.status(200).json(user);
 });
 
-app.get('/api/data', async (_req, res) => {
-  const records = await DataEntry.find({}).exec();
+app.get('/api/data', async (req, res) => {
+  if (!req.user) {
+    res.status(200).json([]);
+    return;
+  }
+
+  const user = req.user as ExpressUser;
+
+  const records = await DataEntry.find({
+    author: user.username,
+  }).exec();
 
   const sanitized: ApplicationData[] = records.map(
     (record) =>
