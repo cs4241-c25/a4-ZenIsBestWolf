@@ -13,6 +13,7 @@
   "scripts": {
     "build:be": "rimraf -rf dist/backend && tsc -p src/backend/tsconfig.json",
     "start:be": "node dist/backend/app/server.js",
+    "start": "node dist/backend/app/server.js",
     "start:be:watch": "rimraf -rf dist/backend && tsc-watch -p src/backend/tsconfig.json --onSuccess \"node dist/backend/app/server.js\"",
     "start:fe": "webpack serve --config build/webpack.config.js"
   },

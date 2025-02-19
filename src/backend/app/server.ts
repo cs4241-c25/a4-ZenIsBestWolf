@@ -83,6 +83,10 @@ interface Signup {
   password: string;
 }
 
+app.get('/', (req, res) => {
+  res.sendFile('index.html');
+});
+
 app.get('/api/logout', (req, res) => {
   req.logout((err) => {
     if (err) console.error(err);
