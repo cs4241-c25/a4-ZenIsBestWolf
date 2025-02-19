@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useContext, useEffect, useState } from 'react';
 import { Button, Input, Table } from 'reactstrap';
 import { ApplicationData, FormSubmission } from '../../shared/data';
 import { EntryNodeList } from './entry';
 import { useHistory } from 'react-router-dom';
+import { UserContext } from '../providers';
 
 export const HomePage: FC = () => {
   const [results, setResults] = useState<ApplicationData[] | undefined>();
@@ -16,9 +16,7 @@ export const HomePage: FC = () => {
     setResults(await api.getData());
   }, [setResults]);
 
-  const user = {
-    username: 'joe',
-  };
+  const { user, setUser } = useContext(UserContext);
 
   useEffect(() => {
     void fetchData();
@@ -48,11 +46,21 @@ export const HomePage: FC = () => {
           </Button>
         </>
       )}
+      {user && (
+        <Button
+          onClick={() => {
+            localStorage.removeItem('username');
+            setUser(undefined);
+          }}
+        >
+          Log Out
+        </Button>
+      )}
       <Table>
         <thead>
           <tr>
             <th>Response ID</th>
-            <th>Name</th>
+            <th>Author</th>
             <th>Location</th>
             <th>Start</th>
             <th>End</th>
@@ -75,7 +83,7 @@ export const HomePage: FC = () => {
               disable={() => {
                 setCreating(false);
               }}
-              username={user.username ?? 'unknown'}
+              username={user?.username ?? 'unknown'}
               refresh={fetchData}
             />
           )}
@@ -95,7 +103,6 @@ const NewEntry: FC<{
     location: '',
     start: new Date(),
     end: new Date(),
-    name: username,
   });
 
   // makes object state easier to manipulate

@@ -1,2 +1,2 @@
-export * from "./DataEntry";
-export * from "./User";
+export * from './DataEntry';
+export * from './User';

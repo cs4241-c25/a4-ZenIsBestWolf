@@ -1,12 +1,14 @@
-import { Schema, model } from "mongoose";
+import { Schema, model } from 'mongoose';
+import { ApplicationData } from '../../../shared/data';
 
-const DataEntrySchema = new Schema({
+export type IDataEntry = ApplicationData;
+
+const DataEntrySchema = new Schema<IDataEntry>({
   id: Schema.ObjectId,
-  name: String,
-  email: String,
   location: String,
   start: Date,
   end: Date,
+  author: String,
 });
 
-export const DataEntry = model("DataEntry", DataEntrySchema);
+export const DataEntry = model<IDataEntry>('DataEntry', DataEntrySchema);

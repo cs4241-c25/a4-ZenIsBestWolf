@@ -30,12 +30,12 @@ const EntryNode: FC<{
   return (
     <tr>
       <td>{entry.id}</td>
-      <td>{entry.name}</td>
+      <td>{entry.author}</td>
       <td>{entry.location}</td>
       <td>{entry.start.toDateString()}</td>
       <td>{entry.end.toDateString()}</td>
       <td>
-        <DeleteButton refresh={refresh} id={entry.id} disabled={entry.name !== username} />
+        <DeleteButton refresh={refresh} id={entry.id} disabled={entry.author !== username} />
       </td>
     </tr>
   );

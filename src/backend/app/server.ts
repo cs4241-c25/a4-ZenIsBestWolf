@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import express, { RequestHandler } from 'express';
+import express, { RequestHandler, User as ExpressUser } from 'express';
 import path from 'path';
 import https from 'https';
 import fs from 'fs';
@@ -8,11 +8,22 @@ import session from 'express-session';
 import 'dotenv/config';
 import { ApplicationData, FormSubmission } from '../../shared/data';
 import { initDB } from './db';
-import { DataEntry, User } from './models';
-import { Strategy } from 'passport-local';
+import { DataEntry, IUser, User } from './models';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { hostname } from 'os';
+import { HydratedDocument } from 'mongoose';
+
+declare module 'Express' {
+  interface User {
+    username: string;
+  }
+}
 
 const app = express();
-const port = process.env.PORT ?? '8081';
+const port = Number.parseInt(process.env.PORT ?? '8081');
+
+const isHTTPS = port === 443 || process.env.HTTPS === 'true';
+const ROOT_URL = `${isHTTPS ? 'https' : 'http'}://${hostname()}${(port === 443 && isHTTPS) || (port === 80 && !isHTTPS) ? null : `:${port}`}`;
 
 initDB();
 
@@ -27,8 +38,18 @@ app.use(passport.authenticate('session'));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
+const getExpressUser = (mongoUser?: HydratedDocument<IUser>): ExpressUser | false => {
+  if (!mongoUser) {
+    return false;
+  }
+
+  return {
+    username: mongoUser.username,
+  };
+};
+
 passport.use(
-  new Strategy(
+  new LocalStrategy(
     { usernameField: 'username', passwordField: 'password' },
 
     async (username, password, done) => {
@@ -41,7 +62,7 @@ passport.use(
           done(null, false);
           return;
         }
-        done(null, user);
+        done(null, getExpressUser(user));
       } catch (error) {
         done(error);
       }
@@ -78,8 +99,19 @@ app.post('/api/signup', async (req, res) => {
   res.status(201).json({ status: 'Created' });
 });
 
-app.post('/api/login', passport.authenticate('local') as RequestHandler, (_req, res) => {
-  res.status(200).json({ status: 'OK' });
+app.post('/api/login', passport.authenticate('local') as RequestHandler, (req, res) => {
+  // const user = req.user as ExpressUser;
+  res.status(200).json(req.user);
+});
+
+app.get('/api/user', (req, res) => {
+  if (!req.user) {
+    res.status(200).json({ username: '' });
+    return;
+  }
+
+  const user = req.user as ExpressUser;
+  res.status(200).json(user);
 });
 
 app.get('/api/data', async (_req, res) => {
@@ -89,23 +121,23 @@ app.get('/api/data', async (_req, res) => {
     (record) =>
       ({
         id: record._id.toString(),
-        name: record.name,
         location: record.location,
         start: record.start,
         end: record.end,
+        author: record.author,
       }) as ApplicationData,
   );
 
   res.status(200).json(sanitized);
 });
 
-// Is there any way to handle data validation? I miss JOI.
-
 app.post('/api/data', async (req, res) => {
   const data = req.body as FormSubmission;
+  const user = req.user as ExpressUser;
 
   const newRecord = await DataEntry.create({
     ...data,
+    author: user.username,
   });
 
   await newRecord.save();
@@ -116,35 +148,21 @@ app.post('/api/data', async (req, res) => {
 app.delete('/api/data/:id', async (req, res) => {
   // get necessary deletion id
   const id = req.params.id;
-  const user = req.user;
-
-  if (!user) {
-    res.status(403).send('You must be logged in.');
-    return;
-  }
+  const user = req.user as ExpressUser;
 
   const lookup = await DataEntry.findById(id).exec();
 
   if (!lookup) {
-    res.status(404).json({ status: 'Item not found.' });
+    res.status(404).json({ error: 'Item not found.' });
   } else {
+    if (lookup.author !== user.username) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
     await lookup.deleteOne();
     res.status(204).json({ status: `Deleted ${id}` });
   }
 });
-
-if (port === '443') {
-  const key = fs.readFileSync(path.join(__dirname, '../../../certs/privkey.pem'));
-  const cert = fs.readFileSync(path.join(__dirname, '../../../certs/certificate.pem'));
-
-  https.createServer({ key, cert }, void app).listen(port, () => {
-    console.log('HTTPS Server is live!');
-  });
-} else {
-  app.listen(port, () => {
-    console.log(`HTTP Server is live on port ${port}.`);
-  });
-}
 
 // This server is not able to brew coffee due to being a teapot.
 // Do not allow brews and alert the user of being a teapot.
@@ -152,3 +170,16 @@ if (port === '443') {
 app.get('/api/brew', (_req, res) => {
   res.status(418).send("I'm a teapot");
 });
+
+if (isHTTPS) {
+  const key = fs.readFileSync(path.join(__dirname, '../../../certs/privkey.pem'));
+  const cert = fs.readFileSync(path.join(__dirname, '../../../certs/certificate.pem'));
+
+  https.createServer({ key, cert }, void app).listen(port, () => {
+    console.log(`HTTPS Server is live: ${ROOT_URL}/`);
+  });
+} else {
+  app.listen(port, () => {
+    console.log(`HTTP Server is live: ${ROOT_URL}/.`);
+  });
+}

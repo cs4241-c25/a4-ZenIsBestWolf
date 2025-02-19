@@ -1,4 +1,5 @@
 import { ApplicationData, FormSubmission } from '../shared/data';
+import { User } from '../shared/user';
 
 type HTTPMethod = 'delete' | 'get' | 'head' | 'patch' | 'post' | 'put';
 
@@ -47,8 +48,16 @@ export class APIClient {
     });
   }
 
+  public async acquireUser() {
+    const user = await this.request<User>(`/api/user`);
+    if (user.username === '') {
+      return undefined;
+    }
+    return user;
+  }
+
   public async authenticate(username: string, password: string) {
-    await this.request({
+    return await this.request<User>({
       url: `/api/login`,
       method: 'post',
       payload: {
@@ -84,7 +93,15 @@ export class APIClient {
     let parsedResponse: unknown;
 
     if (body !== '') {
-      parsedResponse = JSON.parse(body, restoreDate) as unknown;
+      console.log('body:', body);
+      console.log('url:', url);
+      console.log('res', response);
+
+      try {
+        parsedResponse = JSON.parse(body, restoreDate) as unknown;
+      } catch {
+        /* noop */
+      }
     }
 
     if (status >= 200 && status <= 299) {

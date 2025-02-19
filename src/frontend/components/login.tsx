@@ -1,12 +1,15 @@
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useContext, useState } from 'react';
 import { Button, Form, Input } from 'reactstrap';
 import { useHistory } from 'react-router-dom';
+import { UserContext } from '../providers';
 
 export const LoginPage: FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const history = useHistory();
+
+  const { setUser } = useContext(UserContext);
 
   const attemptLogin = useCallback(async () => {
     if (username.length < 0) {
@@ -18,11 +21,13 @@ export const LoginPage: FC = () => {
       alert('Please provide a password.');
       return;
     }
-    await api.authenticate(username, password);
 
-    // setUser({ username });
+    const authUser = await api.authenticate(username, password);
+
+    setUser(authUser);
+    localStorage.setItem('username', authUser.username);
     history.push(`/`);
-  }, [username, password, history]);
+  }, [username, password, setUser, history]);
 
   return (
     <>
